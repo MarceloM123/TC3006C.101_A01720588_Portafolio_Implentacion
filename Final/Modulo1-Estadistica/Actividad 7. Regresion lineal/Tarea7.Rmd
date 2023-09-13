@@ -1,0 +1,191 @@
+---
+title: "Tarea 7. La recta de mejor ajuste"
+author: "Marcelo Márquez"
+date: "2023-08-29"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(corrplot)
+library(stats)
+library(ggplot2)
+library(lmtest)
+
+M = read.csv("Estatura-peso_HyM.csv")
+MM = subset(M, M$Sexo == "M")
+MH = subset(M, M$Sexo == "H")
+M1 = data.frame(MH$Estatura, MH$Peso, MM$Estatura, MM$Peso)
+M1
+```
+
+```{r}
+A = lm(M$Peso~M$Estatura+M$Sexo)
+A
+```
+```{r}
+summary(A)
+```
+
+
+El estadístico F pertenece a la significancia global y, como se puede observar, se encuentra muy lejano al valor 1, lo cual indica que la regresión lineal sí se puede usar en el modelo. El valor de t pertenece a la significancia individual, esta muy apartado del valor hipotético (19 y 16) El coeficiente de detrminación correponde al valor de r cuadrad ajustado porque tenemos más de una variable
+
+Por medio de la R^2 podemos interpretar que el modelo explica el 78.37% de la variabilidad del peso por medio de las variables estatura y sexo. La ecuación del modelo es: y = −74.75 + 89.2604 ∗ E - 10.564 ∗ S
+
+## La recta de mejor ajuste (Primera entrega)
+
+```{r}
+# Calcular la matriz de correlación
+matrizCorrelacion = cor(M1)
+corrplot(matrizCorrelacion, method = "circle")
+
+```
+
+Interpretación:
+
+
+```{r}
+n=4 #número de variables
+d=matrix(NA,ncol=7,nrow=n)
+for(i in 1:n){
+  d[i,]<-c(as.numeric(summary(M1[,i])),sd(M1[ ,i]))
+}
+m=as.data.frame(d)
+
+row.names(m)=c("H-Estatura","H-Peso","M-Estatura","M-Peso")
+names(m)=c("Minimo","Q1","Mediana","Media","Q3","Máximo","Desv Est")
+m
+
+boxplot(M$Estatura~M$Sexo, ylab="Estatura", xlab="", col=c("blue","pink"), names=c("Hombres", "Mujeres"), main="Estatura")
+boxplot(M$Peso~M$Sexo, ylab="Peso",xlab="", names=c("Hombres", "Mujeres"), col=c("blue","pink"), main="Peso")
+```
+
+```{r}
+b0 = A$coefficients[1]
+b1 = A$coefficients[2]
+b2 = A$coefficients[3]
+
+cat("Peso =",b0,"+",b1,"Estatura",b2,"SexoM")
+
+# Para Mujeres (SexoM=1)
+cat("Para mujeres", "\n")
+cat("Peso =", b0+b2, "+", b1, "Estatura", "\n")
+
+# Para Mujeres (SexoM=0)
+cat("Para hombres", "\n")
+cat("Peso =", b0, "+", b1, "Estatura")
+```
+```{r}
+Ym = function(x) {b0 + b2 + b1 * x}
+Yh = function(x) {b0 + b1 * x}
+
+colores = c("blue", "pink")
+plot(M$Estatura, M$Peso, col=colores[factor(M$Sexo)], pch=19, ylab="Peso", xlab = "Estatura", main="Relación de Peso vs Estatura")
+
+# 1.43 = min(M$Estatura)
+# 1.81 = max(M$Estatura)
+x = seq(1.43, 1.81, 0.01)
+lines(x, Ym(x), col="pink", lwd=3)
+lines(x, Yh(x), col="blue", lwd=3)
+```
+
+5.  Interpreta en el contexto del problema cada uno de los análisis que hiciste.
+
+
+6.  Interpreta en el contexto del problema:
+-   ¿Qué información proporciona β̂0 sobre la relación entre la estatura y el peso de hombres y mujeres?
+-   ¿Cómo interpretas β̂1 en la relación entre la estatura y el peso de hombres y mujeres?
+
+```{r}
+
+```
+
+## Validación del Modelo (segunda entrega)
+
+### Normalidad
+* Histograma
+* Prueba de Hipótesis
+* QQplot
+
+```{r}
+shapiro.test(A$residuals)
+```
+
+```{r}
+hist(A$residuals, freq = FALSE, ylim = c(0, 0.1), xlab = "Resuidos", col = 0, main = "Histograma de Residuos")
+lines(density(A$residuals), col = "red", ylim = c(0, 0.1))
+curve(dnorm(x, mean = mean(A$residuals), sd = sd(A$residuals)), from = min(A$residuals), to = max(A$residuals), add = TRUE, col = "blue", lwd = 2)
+```
+
+Se realiza la prueba de Breusch-Pagan para identificar si existe homocedasticidad en los datos. 
+Por lo tanto, se establecen las siguientes hipótesis:
+h0: Homocedasticidad
+h1: Heterocedasticidad
+```{r}
+bptest(A)
+```
+Como alpha > Valor p (3.413 e-11), se rechaza H0 a favor de Ha por lo que hay heterocedasticidad
+
+```{r}
+qqnorm(A$residuals, col="orange")
+qqline(A$residuals, col="blue")
+```
+
+```{r}
+plot(A$fitted.values, A$residuals, col=c('orange'))
+abline(h=0, col="blue")
+```
+
+
+
+De la regrsión que se realizó, primero se revisó que se cumplieran los supuestos de los Mínimos Cuadrados Ordinarios verificando, por su parte la normalidad, el supuesto de homocedasticidad y la correlación de los datos. 
+Con este modelo se puede identificar el sexo de una persona con base en su estatura y peso. Durante el análisis se pudieron observar algunas tendencias en ambas variables independintes siendo, por ejemplo, que los hombres tienden a tener un mayor peso que las mujeres. 
+
+Al haber realizado pruebas de los supuestos (tanto gráficamente como numéricamente), graficado los residuos, y examinado gráficamente que se esté cumpliendo la normalidad, se puede determinar que el modelo tiene buena capacidad de predecir el seño de una persona con base en las variables que se tienen disponibles. 
+
+## Intervalos de confianza (última entrega)
+
+```{r}
+resultado = t.test(M1, conf.level = 0.95)
+resultado
+```
+```{r}
+a = 0.03
+confint(A, level= 1-a)
+
+lp = predict(object=A, interval="prediction", level = 0.97)
+lp
+```
+
+```{r}
+datos1 = cbind(M1, lp)
+ggplot(datos1, aes(x = datos1$MH.Estatura, y = datos1$MH.Peso)) +
+  geom_point() +
+  geom_line(aes(y = lwr ), color = "red", linetype = "dashed") +
+  geom_line(aes(y = upr), color = "red", linetype = "dashed") +
+  geom_smooth(
+    method = lm,
+    formula = y ~ x,
+    se = TRUE,
+    level = 0.97,
+    col = "blue",
+    fill = "pink2"
+  ) +
+  theme_light()
+
+```
+
+
+```{r}
+plot(A, col='coral2')
+```
+Cuáles son las diferencias y similitudes de estos gráficos con respecto a los que ya habías analizado?
+Estos gráficos, ¿cambian en algo las conclusiones que ya habías obtenido?
+
+Los gráficos son muy similares a los que ya había realizado. Particularmente los gráficos de Q-Q y el gráfico de residuales se observa que se asemejan a los que se hicieron con código en el ejercicio. No obstante, se pueden ver pequeñas diferencias. Por ejemplo, la línea de los residuales está un poco más curveada que la realizada sin la funcion "plot()". 
+Además, la función arroja la gráfica de residuales con Leverage la cual no hicimos en esta tarea y aporta herramientas para el análisis del modelo. No obstante, los resultados no afectan las conclusiones anteriores. 

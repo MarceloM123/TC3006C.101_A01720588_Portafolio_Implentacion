@@ -1,0 +1,192 @@
+---
+title: "Tarea4"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+date: '2023-08-18'
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(plotrix)
+```
+
+Problema 1: Suponga que la porosidad al helio (en porcentaje)
+de muestras de carbón, tomadas de cualquier veta
+en particular, está normalmente distribuida con una
+desviación estándar verdadera de 0.75. Se sabe que
+10 años atrás la porosidad media de helio en la veta
+era de 5.3 y se tiene interés en saber si actualmente
+ha disminuido. Se toma una muestra al azar de 20
+especímenes y su promedio resulta de 4.85.
+
+a) Haga una estimación por intervalo con una confianza del 97%
+para el promedio de porosidad para evaluar si ha disminuido.
+  
+```{r}
+media1 = 4.85
+desv = 0.75
+n1 = 20
+confianza = 0.97
+
+alpha = 1 - confianza
+z = qnorm(1 - alpha/2)
+
+# Calculamos el intervalo de confianza
+margenError1 = z * (desv / sqrt(n1))
+lower1 = media1 - margenError1
+upper1 = media1 + margenError1
+
+# Resultados
+cat("Intervalo de confianza al 97%: [", lower1, ", ", upper1, "]\n")
+```
+  
+b) Se toma otra muestra de tamaño 16. El promedio de la muestra
+fue de 4.56. Calcule el intervalo de confianza al 97% de
+confianza
+  
+```{r}
+n2 = 16
+media2 = 4.56
+
+# Calculamos el intervalo de confianza
+margenError2 = z * (desv / sqrt(n2))
+lower2 = media2 - margenError2
+upper2 = media2 + margenError2
+
+# Resultados
+cat("Intervalo de confianza al 97%: [", lower2, ", ", upper2, "]\n")
+```
+  
+c) ¿Podemos afirmar que la porosidad del helio ha disminuido?
+  
+```{r}
+mediaPasada = 5.3
+
+# Evaluación
+dec1 = mediaPasada > upper1
+dec2 = mediaPasada > upper2
+
+# Resultados
+cat("¿Ha disminuido la porosidad en el problema a?: ", dec1, "\n")
+cat("¿Ha disminuido la porosidad en el problema b?: ", dec2, "\n")
+```
+Dado que ambos estan en "TRUE", se puede afirmar que la porosidad ha disminuido un 97% de confianza.
+
+Problema 2: Suponga que la porosidad al helio (en porcentaje)
+de muestras de carbón, tomadas de cualquier veta
+en particular, está normalmente distribuida con una
+desviación estándar verdadera de 0.75.
+
+a) ¿Qué tan grande tiene que ser el tamaño de la muestra si se
+desea que el ancho del intervalo con un 95% de confianza no
+sobrepase de 0.4?
+```{r}
+ancho1 = 0.4
+alpha1 = 0.05
+desv = 0.75
+
+z1 = qnorm(1 - alpha1/2)
+
+# Calculamos el tamaño de la muestra
+n1 = ceiling((2 * z1 * desv / ancho1)^2)
+
+# Resultado
+cat("Tamaño de muestra necesario para el problema 1: ", n1, "\n")
+```
+
+b) ¿Qué tamaño de muestra necesita para estimar la porosidad
+promedio verdadera dentro de 0.2 unidades alrededor de la
+media muestral con una confianza de 99%?
+```{r}
+# Datos del problema 2 corregido
+ancho2 = 0.2
+alpha2 = 0.01
+
+# Valor crítico de Z para un nivel de confianza del 99%
+z2 = qnorm(1 - alpha2/2)
+
+# Calculamos el tamaño de la muestra
+n2 = ceiling((z2 * desv / ancho2)^2)
+
+# Resultado
+cat("Tamaño de muestra necesario para el problema 2: ", n2, "\n")
+```
+
+Problema 3: Con el archivo de datos de El Marcapasos Download El Marcapasos haz los intervalos de confianza para la media de dos de las siguientes variables:
+
+```{r}
+M = read.csv("El marcapasos.csv")
+
+calcConfInterval <- function(data, conf_level = 0.95) {
+  n <- length(data)
+  mean_val <- mean(data)
+  sd_val <- sd(data)
+  error <- qnorm((1 + conf_level) / 2) * (sd_val / sqrt(n))
+  lower_bound <- mean_val - error
+  upper_bound <- mean_val + error
+  return(c(lower_bound, upper_bound))
+}
+
+MConMP = subset(M, Marcapasos == "Con MP")
+MSinMP = subset(M, Marcapasos == "Sin MP")
+```
+  
+a) Intensidad de pulsos con y sin Marcapasos
+```{r}
+# Calcular intervalos de confianza para la intensidad de pulso
+confIntensidadConMP <- calcConfInterval(MConMP$Intensidad.de.pulso)
+confIntensidadSinMP <- calcConfInterval(MConMP$Intensidad.de.pulso)
+
+# Imprimir los resultados
+cat("Intervalo de confianza para la intensidad de pulso con marcapasos: ", confIntensidadConMP, "\n")
+cat("Intervalo de confianza para la intensidad de pulso sin marcapasos: ", confIntensidadSinMP, "\n")
+```
+  
+b) Periodo entre pulso con y sin Marcapasos
+```{r}
+# Calcular intervalos de confianza para el periodo entre pulsos
+confPeriodoConMP <- calcConfInterval(MConMP$Periodo.entre.pulsos)
+confPeriodoSinMP <- calcConfInterval(MSinMP$Periodo.entre.pulsos)
+
+# Imprimir los resultados
+cat("Intervalo de confianza para el periodo entre pulsos con marcapasos: ", confPeriodoConMP, "\n")
+cat("Intervalo de confianza para el periodo entre pulsos sin marcapasos: ", confPeriodoSinMP, "\n")
+
+```
+  
+problema 3: Grafica los intervalos. En un gráfico la intensidad de pulso con y sin marcapasos y en otro gráfico el periodo entre pulso con y sin marcapasos. Interpreta el resultado.
+  
+```{r}
+# Datos de ejemplo basados en los intervalos de confianza calculados anteriormente
+mediaIntConMP <- mean(MConMP$Intensidad.de.pulso)
+mediaIntSinMP <- mean(MSinMP$Intensidad.de.pulso)
+
+mediaPerConMP <- mean(MConMP$Periodo.entre.pulsos)
+mediaPerSinMP <- mean(MSinMP$Periodo.entre.pulsos)
+
+# Graficar la intensidad de pulso
+plotCI(x=1, y=mediaIntConMP, ui=confIntensidadConMP[2], li=confIntensidadConMP[1], col="red", pch=19, xlim=c(0,3), ylim=range(c(confIntensidadConMP, confIntensidadSinMP)), xlab="", ylab="Intensidad de Pulso", main="Intensidad de Pulso con y sin Marcapasos")
+points(x=2, y=mediaIntSinMP, pch=19, col="blue")
+plotCI(x=2, y=mediaIntSinMP, ui=confIntensidadSinMP[2], li=confIntensidadSinMP[1], col="blue", add=TRUE)
+axis(1, at=1:2, labels=c("Con MP", "Sin MP"))
+
+# Graficar el periodo entre pulsos
+plotCI(x=1, y=mediaPerConMP, ui=confPeriodoConMP[2], li=confPeriodoConMP[1], col="red", pch=19, xlim=c(0,3), ylim=range(c(confPeriodoConMP, confIntensidadSinMP)), xlab="", ylab="Periodo Entre Pulsos", main="Periodo Entre Pulsos con y sin Marcapasos")
+#points(x=2, y=confPeriodoSinMP, pch=19, col="blue")
+#plotCI(x=2, y=confPeriodoSinMP, ui=confIntensidadSinMP[2], li=confIntensidadSinMP[1], col="blue", add=TRUE)
+#axis(1, at=1:2, labels=c("Con MP", "Sin MP"))
+
+```
+
+
+
+
+
+
+
